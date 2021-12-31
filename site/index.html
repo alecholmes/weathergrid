@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather</title>
+    <script type="text/javascript">
+        const weatherUrl = 'https://alecholmes-weatherdata-snapshots.s3.us-east-1.amazonaws.com/snapshot_latest_default.json';
+        const state = {
+            weatherGroups: null,
+            groupSlug: 'sf-marin',
+
+            group() {
+                let group = this.weatherGroups['groups'].find(g => g['slug'] === this.groupSlug);
+                if (group === undefined) {
+                    throw "cannot find group with slug " + this.groupSlug;
+                }
+                return group;
+            }
+        };
+
+        const dayFormat = new Intl.DateTimeFormat('en-US', {weekday: 'short'});
+
+        function tempClass(temp) {
+            if (temp < 35) {
+                return 'vvvvcold';
+            } else if (temp < 40) {
+                return 'vvvcold';
+            } else if (temp < 50) {
+                return 'vvcold';
+            } else if (temp < 53) {
+                return 'vcold';
+            } else if (temp < 60) {
+                return 'cold';
+            } else if (temp < 68) {
+                return 'warm';
+            } else if (temp < 78) {
+                return 'vwarm'
+            } else if (temp < 85) {
+                return 'vvwarm';
+            } else if (temp < 95) {
+                return 'vvvwarm'
+            }
+            return 'vvvvwarm';
+        }
+
+        function summaryIcon(weather) {
+            const span = document.createElement('span');
+            if (weather['precipitation_percent'] >= 0.2) {
+                span.textContent = '☂️'; // '🌧️';
+            } else if (weather['clouds'] > 60) {
+                span.textContent = '☁️';
+            } else if (weather['clouds'] > 25) {
+                span.textContent = '🌤️';
+            } else {
+                span.textContent = '☀️'; // TODO: moon at night;
+            }
+            return span
+        }
+
+        function precipitationPercent(weather) {
+            const span = document.createElement('span')
+            span.className = 'precipitationpercent';
+            if (weather['precipitation_percent'] <= 0.2) {
+                return span;
+            }
+
+            span.textContent = (weather['precipitation_percent'] * 100).toLocaleString(undefined, {maximumFractionDigits: 0}) + '%';
+            return span
+        }
+
+        function windDirectionIcon(weather) {
+            const span = document.createElement('span');
+            if (weather['wind_speed'] <= 3 && weather['wind_gust'] < 3) {
+                return span;
+            }
+            const icons = '↓↙←↖↑↗→↘';
+            span.textContent = icons[Math.floor(weather['wind_degree'] / (360 / icons.length))];
+            return span;
+        }
+
+        function windSpeed(weather) {
+            const span = document.createElement('span');
+            if (weather['wind_speed'] <= 3 && weather['wind_gust'] < 3) {
+                return span;
+            }
+            span.textContent = '' + Math.round(weather['wind_speed']);
+
+            const gustMultiplier = Math.floor((weather['wind_gust'] - weather['wind_speed']) / 5);
+            if (gustMultiplier > 0) {
+                span.textContent += '!'.repeat(gustMultiplier);
+            }
+
+            return span;
+        }
+
+        function weatherCell(weather) {
+            const td = document.createElement('td');
+
+            const tempBar = document.createElement('div');
+            tempBar.className = 'tempbar ' + tempClass(Math.round(weather['temp_feels_like']));
+            td.appendChild(tempBar);
+
+            const tempDiv = document.createElement('div');
+            tempDiv.className = 'temp';
+            tempDiv.textContent = '' + Math.round(weather['temp_feels_like']);
+            td.appendChild(tempDiv);
+
+            const summaryDiv = document.createElement('div')
+            summaryDiv.className = 'summary';
+            summaryDiv.appendChild(summaryIcon(weather));
+            summaryDiv.appendChild(precipitationPercent(weather));
+            summaryDiv.appendChild(windDirectionIcon(weather));
+            summaryDiv.appendChild(windSpeed(weather));
+            td.appendChild(summaryDiv);
+
+            return td;
+        }
+
+        function summaryTimestamp(ts) {
+            if (ts.getHours() === 0) {
+                return '12am';
+            } else if (ts.getHours() < 12) {
+                return '' + ts.getHours() + 'am';
+            } else if (ts.getHours() === 12) {
+                return '12pm';
+            }
+            return '' + (ts.getHours() - 12) + 'pm';
+        }
+
+        function dateSpan(ts) {
+            const span = document.createElement('div')
+            span.textContent = dayFormat.format(ts) + ' ' + ts.getDate();
+            return span
+        }
+
+        function timestampSpan(tsString) {
+            const span = document.createElement('div')
+            span.textContent = tsString;
+            return span
+        }
+
+        function render(state) {
+            console.log(state.group());
+            const container = document.createElement('div');
+            container.id = 'container';
+
+            container.appendChild(weatherTable(state.group()));
+
+            const oldContainer = document.getElementById('container');
+            oldContainer.parentNode.replaceChild(container, oldContainer);
+        }
+
+        function weatherTable(group) {
+            const table = document.createElement('table');
+
+            const timestamps = group['locations'][0]['all'].map(w => w['timestamp']);
+            const dayTr = document.createElement('tr');
+            dayTr.appendChild(document.createElement('th'));
+            for (let i = 0; i < timestamps.length;) {
+                const firstTs = timestamps[i];
+                let firstNext = timestamps.slice(i).findIndex(ts => ts.getDate() !== firstTs.getDate());
+                if (firstNext < 0) {
+                    firstNext = timestamps.length;
+                }
+
+                const dayTh = document.createElement('th');
+                dayTh.className = 'day';
+                dayTh.colSpan = firstNext;
+                dayTh.textContent = dayFormat.format(firstTs) + ' ' + firstTs.getDate();
+                dayTr.appendChild(dayTh);
+                i += firstNext;
+            }
+
+            const tsTr = document.createElement('tr');
+            tsTr.appendChild(document.createElement('th'));
+            let lastTimestamp = null;
+            timestamps.forEach((ts, i) => {
+                const headTh = document.createElement('th');
+                if (i === 0) {
+                    lastTimestamp = ts;
+
+                    headTh.appendChild(dateSpan(ts));
+                    headTh.appendChild(timestampSpan('Now'));
+                } else {
+                    if (ts.getDate() !== lastTimestamp.getDate()) {
+                        headTh.appendChild(dateSpan(ts));
+                    }
+
+                    headTh.appendChild(timestampSpan(summaryTimestamp(ts)));
+                    lastTimestamp = ts;
+                }
+                tsTr.appendChild(headTh);
+            })
+            table.appendChild(tsTr);
+
+            for (const loc of group['locations']) {
+                const row = document.createElement('tr');
+
+                const td = document.createElement('td');
+                td.textContent = loc['name'];
+                row.appendChild(td);
+
+                for (const weather of loc['all']) {
+                    row.appendChild(weatherCell(weather));
+                }
+
+                table.appendChild(row);
+            }
+
+            return table;
+        }
+
+        function flattenWeathers(weatherGroups) {
+            for (const group of weatherGroups['groups']) {
+                for (const loc of group['locations']) {
+                    // Replace timestamps strings with dates
+                    loc['latest']['timestamp'] = new Date(loc['latest']['timestamp']);
+                    loc['forecasts'].forEach(w => w['timestamp'] = new Date(w['timestamp']));
+
+                    const weathers = loc['forecasts'].filter(w => w['timestamp'].getTime() - loc['latest']['timestamp'].getTime() > 1_000 * 60 * 30);
+                    weathers.push(loc['latest']);
+                    weathers.sort((a, b) => (new Date(a['timestamp']) - (new Date(b['timestamp']))))
+
+                    loc['all'] = weathers
+                }
+            }
+        }
+
+        function weatherLoaded() {
+            const weatherGroups = JSON.parse(this.response)
+
+            flattenWeathers(weatherGroups);
+            state.weatherGroups = weatherGroups;
+            render(state);
+        }
+
+        function loadWeather() {
+            let req = new XMLHttpRequest();
+            req.addEventListener("load", weatherLoaded)
+            req.open('GET', weatherUrl);
+            req.send();
+        }
+
+        window.onload = loadWeather;
+    </script>
+    <style type="text/css">
+        @media (prefers-color-scheme: dark) {
+            body {
+                background-color: black;
+                color: white;
+            }
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system;
+            font-family: '-apple-system', 'HelveticaNeue';
+            /*iOS 8 compatible, credit: @MarcoBoschi*/
+        }
+
+        table {
+            table-layout: fixed;
+            border-collapse: collapse;
+            overflow: scroll;
+        }
+
+        th {
+            text-align: center;
+            vertical-align: bottom;
+            padding: 0.75vw;
+            border-bottom-width: 1px;
+            border-bottom-style: solid;
+            border-bottom-color: lightgray;
+            background-color: white;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        th:first-child {
+            left: 0;
+            z-index: 3;
+        }
+
+        td {
+            text-align: center;
+            padding: 1vw;
+            border-bottom-width: 1px;
+            border-bottom-style: solid;
+            border-bottom-color: lightgray;
+        }
+
+        td:first-child {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 1;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            th {
+                background-color: black;
+            }
+
+            td:first-child {
+                background-color: black;
+            }
+        }
+
+        .day {
+            text-align: left;
+        }
+
+        .tempbar {
+            margin: 0;
+            padding: 0.5vw;
+            min-width: 90%;
+        }
+
+        .temp {
+            font-size: 8vw;
+        }
+
+        .summary {
+            font-size: 4vw;
+        }
+
+        .precipitationpercent {
+            margin-left: 0.25vw;
+            margin-right: 0.5vw;
+        }
+
+        .vvvvcold {
+            background-color: #003366;
+        }
+
+        .vvvcold {
+            background-color: #0059b3;
+        }
+
+        .vvcold {
+            background-color: #4da6ff;
+        }
+
+        .vcold {
+            background-color: #8533ff;
+        }
+
+        .cold {
+            background-color: #d1b3ff;
+        }
+
+        .warm {
+            background-color: khaki;
+        }
+
+        .vwarm {
+            background-color: gold;
+        }
+
+        .vvwarm {
+            background-color: orange;
+        }
+
+        .vvvwarm {
+            background-color: orangered;
+        }
+
+        .vvvvwarm {
+            background-color: firebrick;
+        }
+    </style>
+</head>
+<body>
+<div id="container"></div>
+</body>
+</html>

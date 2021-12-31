@@ -1,0 +1,102 @@
+{
+  "openweathermap_api_key": "TODO_YOUR_KEY_HERE",
+  "snapshots_bucket_name": "alecholmes-weatherdata-snapshots",
+  "groups": [
+    {
+      "name": "SF-Marin",
+      "slug": "sf-marin",
+      "locations": [
+        {
+          "name": "Castro",
+          "slug": "castro",
+          "lat": 37.769321,
+          "lon": -122.433184
+        },
+        {
+          "name": "Twin Peaks",
+          "slug": "twin-peaks",
+          "lat": 37.754901,
+          "lon": -122.446757
+        },
+        {
+          "name": "Golden Gate Park",
+          "slug": "golden-gate-park",
+          "lat": 37.770835,
+          "lon": -122.467989
+        },
+        {
+          "name": "Ocean Beach",
+          "slug": "ocean-beach",
+          "lat": 37.768152,
+          "lon": -122.511961
+        },
+        {
+          "name": "Hawk Hill",
+          "slug": "hawk-hill",
+          "lat": 37.827068,
+          "lon": -122.499206
+        },
+        {
+          "name": "Tiburon",
+          "slug": "tiburon",
+          "lat": 37.873280,
+          "lon": -122.455023
+        },
+        {
+          "name": "Stinson Beach",
+          "slug": "stinson-beach",
+          "lat": 37.897804,
+          "lon": -122.639204
+        },
+        {
+          "name": "Alpine Dam",
+          "slug": "alpine-dam",
+          "lat": 37.941874,
+          "lon": -122.635872
+        },
+        {
+          "name": "Nicasio",
+          "slug": "nicasio",
+          "lat": 38.061079,
+          "lon": -122.697937
+        },
+        {
+          "name": "Mt San Bruno",
+          "slug": "mt-san-bruno",
+          "lat": 37.686012,
+          "lon": -122.435053
+        },
+        {
+          "name": "Pescadero",
+          "slug": "pescadero",
+          "lat": 37.261168,
+          "lon": -122.413800
+        },
+        {
+          "name": "Woodside",
+          "slug": "woodside",
+          "lat": 37.429016,
+          "lon": -122.253946
+        },
+        {
+          "name": "Diablo",
+          "slug": "diablo",
+          "lat": 37.881746,
+          "lon": -121.915130
+        },
+        {
+          "name": "San Pablo Dam",
+          "slug": "san-pablo-dam",
+          "lat": 37.899498,
+          "lon": -122.210369
+        },
+        {
+          "name": "Maui",
+          "slug": "maui",
+          "lat": 20.634743,
+          "lon": -156.451762
+        }
+      ]
+    }
+  ]
+}

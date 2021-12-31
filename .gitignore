@@ -3,3 +3,4 @@
 /terraform/*.tfstate*
 /bin/
 /terraform/bin/
+/config/config.json

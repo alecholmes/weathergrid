@@ -12,6 +12,8 @@ provider "aws" {
 }
 
 locals {
+  s3_prefix = "alecholmes"
+
   lambda_binary_filename = "syncweather_linux_amd64"
 }
 
@@ -57,7 +59,6 @@ resource "aws_iam_policy" "lambda_logging" {
 EOF
 }
 
-# Policy Attachment on the role
 resource "aws_iam_role_policy_attachment" "lambda_logging_attach" {
   role       = aws_iam_role.lambda_role.name
   policy_arn = aws_iam_policy.lambda_logging.arn
@@ -74,10 +75,20 @@ resource "aws_iam_policy" "lambda_s3" {
         {
             "Effect": "Allow",
             "Action": [
+                "s3:GetObject",
                 "s3:PutObject"
             ],
             "Resource": [
-                "arn:aws:s3:::alecholmes-weatherdata/*"
+                "arn:aws:s3:::${aws_s3_bucket.weatherdata.bucket}/*"
+            ]
+        },
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::${aws_s3_bucket.internal.bucket}/*"
             ]
         }
     ]
@@ -97,8 +108,6 @@ data "archive_file" "syncweather" {
   output_path = "bin/syncweather.zip"
 }
 
-# Create a lambda function
-# In terraform ${path.module} is the current directory.
 resource "aws_lambda_function" "syncweather" {
   filename         = data.archive_file.syncweather.output_path
   function_name    = "syncweather"
@@ -106,10 +115,76 @@ resource "aws_lambda_function" "syncweather" {
   handler          = local.lambda_binary_filename
   source_code_hash = filebase64sha256(data.archive_file.syncweather.output_path)
   runtime          = "go1.x"
+  timeout          = 15
 }
 
-# Bucket to store weather data blobs
+# Bucket to store public weather data blobs
 resource "aws_s3_bucket" "weatherdata" {
-  bucket = "alecholmes-weatherdata"
+  bucket = "${local.s3_prefix}-weatherdata-snapshots"
   acl    = "private"
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["GET"]
+    allowed_origins = ["*"]
+    expose_headers  = ["ETag"]
+    max_age_seconds = 300
+  }
+}
+
+# Make weather snapshots in weatherdata bucket publicly readable.
+resource "aws_s3_bucket_policy" "weatherdata" {
+  bucket = aws_s3_bucket.weatherdata.bucket
+  policy = <<EOF
+{
+  "Version":"2012-10-17",
+  "Statement":[
+    {
+      "Effect":"Allow",
+      "Principal": "*",
+      "Action":["s3:GetObject"],
+      "Resource":["arn:aws:s3:::${aws_s3_bucket.weatherdata.bucket}/snapshot_*"]
+      }
+  ]
+}
+EOF
+}
+
+# Bucket to store private lambda weather config.
+resource "aws_s3_bucket" "internal" {
+  bucket = "${local.s3_prefix}-weatherdata-internal"
+  acl    = "private"
+}
+
+resource "aws_s3_bucket_object" "config" {
+  bucket = aws_s3_bucket.internal.bucket
+  key    = "syncweather-config.json"
+  source = "../config/config.json"
+  etag   = filemd5("../config/config.json")
+}
+
+# Schedule to run the lambda
+resource "aws_cloudwatch_event_rule" "syncweather_schedule" {
+  name                = "syncweather-schedule"
+  schedule_expression = "cron(30 * * * ? *)"
+}
+
+resource "aws_cloudwatch_event_target" "trigger_syncweather" {
+  rule      = aws_cloudwatch_event_rule.syncweather_schedule.name
+  target_id = "lambda"
+  arn       = aws_lambda_function.syncweather.arn
+  input     = <<EOF
+{
+  "config_bucket_name": "${aws_s3_bucket.internal.bucket}",
+  "config_object_name": "${aws_s3_bucket_object.config.key}"
+}
+EOF
+}
+
+resource "aws_lambda_permission" "allow_cloudwatch_to_call_syncweather" {
+  statement_id  = "AllowExecutionFromCloudWatch"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.syncweather.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.syncweather_schedule.arn
 }
