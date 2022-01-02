@@ -1,9 +1,28 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <title>Weather | Bay Area Cycling</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Weather</title>
+    <meta name="description" content="Weather forecasts for San Francisco Bay Area cycling">
+    <meta name="keywords" content="weather, cycling, biking, San Francisco, Bay Area, Marin, forecast">
+    <meta name="author" content="Alec Holmes">
+    <meta name=”robots” content="index, follow">
+
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-68676590-1"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+
+        gtag('config', 'UA-68676590-1');
+    </script>
+
     <script type="text/javascript">
         const weatherUrl = 'https://alecholmes-weatherdata-snapshots.s3.us-east-1.amazonaws.com/snapshot_latest_default.json';
         const state = {
@@ -75,7 +94,13 @@
                 return span;
             }
             const icons = '↓↙←↖↑↗→↘';
-            span.textContent = icons[Math.floor(weather['wind_degree'] / (360 / icons.length))];
+
+            let adjDegree = weather['wind_degree'] + 360 / (2 * icons.length)
+            if (adjDegree > 360) {
+                adjDegree -= 360
+            }
+
+            span.textContent = icons[Math.floor(adjDegree / (360 / icons.length))];
             return span;
         }
 
@@ -375,5 +400,8 @@
 </head>
 <body>
 <div id="container"></div>
+<div>
+    Created by <a href="https://alecholmes.com">Alec Holmes</a>. <a href="https://github.com/alecholmes/weathergrid">Source</a>.
+</div>
 </body>
 </html>
