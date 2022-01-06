@@ -155,7 +155,7 @@
 
         function dateSpan(ts) {
             const span = document.createElement('div')
-            span.textContent = dayFormat.format(ts) + ' ' + ts.getDate();
+            span.textContent = dayFormat.format(ts) + '\u00A0' + ts.getDate();
             return span
         }
 
@@ -180,23 +180,6 @@
             const table = document.createElement('table');
 
             const timestamps = group['locations'][0]['all'].map(w => w['timestamp']);
-            const dayTr = document.createElement('tr');
-            dayTr.appendChild(document.createElement('th'));
-            for (let i = 0; i < timestamps.length;) {
-                const firstTs = timestamps[i];
-                let firstNext = timestamps.slice(i).findIndex(ts => ts.getDate() !== firstTs.getDate());
-                if (firstNext < 0) {
-                    firstNext = timestamps.length;
-                }
-
-                const dayTh = document.createElement('th');
-                dayTh.className = 'day';
-                dayTh.colSpan = firstNext;
-                dayTh.textContent = dayFormat.format(firstTs) + ' ' + firstTs.getDate();
-                dayTr.appendChild(dayTh);
-                i += firstNext;
-            }
-
             const tsTr = document.createElement('tr');
             tsTr.appendChild(document.createElement('th'));
             let lastTimestamp = null;
@@ -308,7 +291,7 @@
         th {
             text-align: center;
             vertical-align: bottom;
-            padding: 0.75vw;
+            padding: 0.15em;
             border-bottom-width: 1px;
             border-bottom-style: solid;
             border-bottom-color: lightgray;
@@ -325,7 +308,7 @@
 
         td {
             text-align: center;
-            padding: 1vw;
+            padding: 0.15em;
             border-bottom-width: 1px;
             border-bottom-style: solid;
             border-bottom-color: lightgray;
@@ -353,22 +336,21 @@
         }
 
         .tempbar {
-            margin: 0;
-            padding: 0.5vw;
+            margin: 0 0 0 0;
+            padding: 2px 0px 2px 0px;
             min-width: 90%;
         }
 
         .temp {
-            font-size: 8vw;
+            font-size: 2em;
         }
 
         .summary {
-            font-size: 4vw;
+            font-size: 0.95em;
         }
 
         .precipitationpercent {
-            margin-left: 0.25vw;
-            margin-right: 0.5vw;
+            margin-right: 2px;
         }
 
         .vvvvcold {
