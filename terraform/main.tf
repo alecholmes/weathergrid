@@ -128,7 +128,7 @@ resource "aws_s3_bucket" "weatherdata" {
     allowed_methods = ["GET"]
     allowed_origins = ["*"]
     expose_headers  = ["ETag"]
-    max_age_seconds = 300
+    max_age_seconds = 60
   }
 }
 
