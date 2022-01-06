@@ -66,13 +66,13 @@
         function summaryIcon(weather) {
             const span = document.createElement('span');
             if (weather['precipitation_percent'] >= 0.2) {
-                span.textContent = '☂️'; // '🌧️';
+                span.textContent = '☂️';
             } else if (weather['clouds'] > 60) {
                 span.textContent = '☁️';
             } else if (weather['clouds'] > 25) {
                 span.textContent = '🌤️';
             } else {
-                span.textContent = '☀️'; // TODO: moon at night;
+                span.textContent = '☀️'; // TODO: moon at night
             }
             return span
         }
@@ -285,6 +285,20 @@
             /*iOS 8 compatible, credit: @MarcoBoschi*/
         }
 
+        a {
+            color: black;
+        }
+
+        #footer {
+            padding: 5px 5px 5px 5px;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            a {
+                color: white;
+            }
+        }
+
         table {
             table-layout: fixed;
             border-collapse: collapse;
@@ -400,8 +414,8 @@
 </head>
 <body>
 <div id="container"></div>
-<div>
-    Created by <a href="https://alecholmes.com">Alec Holmes</a>. <a href="https://github.com/alecholmes/weathergrid">Source</a>.
+<div id="footer">
+    Created by <a href="https://alecholmes.com">Alec Holmes</a> (<a href="https://github.com/alecholmes/weathergrid">source</a>).
 </div>
 </body>
 </html>
