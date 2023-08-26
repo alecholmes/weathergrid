@@ -20,7 +20,7 @@ Prerequisites:
 * Terraform
 
 ```shell
-make build-linux
+make build-aws-lambda
 
 cd terraform
 terraform apply
@@ -33,6 +33,14 @@ down):
 * AmazonS3FullAccess
 * CloudWatchEventsFullAccess
 * AWSLambda_FullAccess
+
+To run Terraform locally, AWS credentials can be set in environment variables:
+
+```shell
+export AWS_ACCESS_KEY_ID=your_access_key
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+export AWS_REGION=your_region # e.g. us-east-1
+```
 
 ## Creating weather snapshot JSON locally
 

@@ -2,7 +2,7 @@ terraform {
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 3.0"
+      version = "~> 5.14.0"
     }
   }
 }
@@ -14,7 +14,7 @@ provider "aws" {
 locals {
   s3_prefix = "alecholmes"
 
-  lambda_binary_filename = "syncweather_linux_amd64"
+  lambda_binary_filename = "bootstrap"
 }
 
 resource "aws_iam_role" "lambda_role" {
@@ -105,16 +105,16 @@ resource "aws_iam_role_policy_attachment" "lambda_s3_attach" {
 data "archive_file" "syncweather" {
   type        = "zip"
   source_file = "${path.module}/../bin/${local.lambda_binary_filename}"
-  output_path = "bin/syncweather.zip"
+  output_path = "bin/bootstrap.zip"
 }
 
 resource "aws_lambda_function" "syncweather" {
   filename         = data.archive_file.syncweather.output_path
   function_name    = "syncweather"
   role             = aws_iam_role.lambda_role.arn
-  handler          = local.lambda_binary_filename
+  handler          = "bootstrap"
   source_code_hash = filebase64sha256(data.archive_file.syncweather.output_path)
-  runtime          = "go1.x"
+  runtime          = "provided.al2"
   timeout          = 15
 }
 
