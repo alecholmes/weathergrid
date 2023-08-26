@@ -1,16 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Weather | Bay Area Cycling</title>
+    <title>Weather | Bay Area</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Weather forecasts for San Francisco Bay Area cycling">
-    <meta name="keywords" content="weather, cycling, biking, San Francisco, Bay Area, Marin, forecast">
+    <meta name="description" content="Weather forecasts for San Francisco Bay Area microclimates">
+    <meta name="keywords" content="weather, microclimate, forecase, cycling, biking, San Francisco, Bay Area, Marin">
     <meta name="author" content="Alec Holmes">
     <meta name=”robots” content="index, follow">
 
-    <!-- Global site tag (gtag.js) - Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-68676590-1"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-5QQX1BWP6D"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+
+        function gtag() {
+            dataLayer.push(arguments);
+        }
+
+        gtag('js', new Date());
+
+        gtag('config', 'G-5QQX1BWP6D');
+    </script>
     <script>
         window.dataLayer = window.dataLayer || [];
 
@@ -27,6 +38,8 @@
         const weatherUrl = 'https://alecholmes-weatherdata-snapshots.s3.us-east-1.amazonaws.com/snapshot_latest_default.json';
         const state = {
             weatherGroups: null,
+            lastLoadStarted: null,
+
             groupSlug: 'sf-marin',
 
             group() {
@@ -166,7 +179,7 @@
         }
 
         function render(state) {
-            console.log(state.group());
+            log(state.group());
             const container = document.createElement('div');
             container.id = 'container';
 
@@ -236,6 +249,7 @@
         }
 
         function weatherLoaded() {
+            log("rendering weather")
             const weatherGroups = JSON.parse(this.response)
 
             flattenWeathers(weatherGroups);
@@ -244,13 +258,34 @@
         }
 
         function loadWeather() {
+            log("loading weather")
+            state.lastLoadStarted = Date.now()
+
             let req = new XMLHttpRequest();
             req.addEventListener("load", weatherLoaded)
             req.open('GET', weatherUrl);
             req.send();
         }
 
+        function maybeReloadWeather() {
+            // Avoid race when page initializes
+            if (state.lastLoadStarted === null) {
+                return
+            }
+
+            const elapsedMins = (Date.now() - state.lastLoadStarted) / 1_000 / 60
+            if (elapsedMins >= 5) {
+                loadWeather()
+            }
+        }
+
+        function log(obj) {
+            console.log("[" + (new Date()).toISOString() + "]", obj)
+        }
+
         window.onload = loadWeather;
+        document.addEventListener('visibilitychange', maybeReloadWeather)
+        setInterval(maybeReloadWeather, 5 * 60 * 1_000) // Reload every 5 minutes
     </script>
     <style type="text/css">
         @media (prefers-color-scheme: dark) {
@@ -398,7 +433,7 @@
 <body>
 <div id="container"></div>
 <div id="footer">
-    Created by <a href="https://alecholmes.com">Alec Holmes</a> (<a href="https://github.com/alecholmes/weathergrid">source</a>).
+    <a href="https://alecholmes.com">Home</a> | <a href="https://github.com/alecholmes/weathergrid">Source code</a>
 </div>
 </body>
 </html>
